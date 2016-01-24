@@ -1,0 +1,52 @@
+#!/usr/bin/env python
+"""
+pic2date is a simple command line tool for 
+renaming picture files according to date
+time that is found from the EXIF date.
+
+Author:  Eelis Takala
+Date:    January 2016
+License: GPLv2
+"""
+
+import argparse
+import os
+from PIL import Image
+from PIL.ExifTags import TAGS
+ 
+def get_exif_data(file_name):
+    exif_dict = {}
+    i = Image.open(file_name)
+    info = i._getexif()
+    for tag, value in info.items():
+        decoded = TAGS.get(tag, tag)
+        exif_dict[decoded] = value
+    return exif_dict
+
+def date_time_fix_str(date_time):
+    return date_time.replace(':', '-').replace(' ','_')
+
+def rename_files_by_datetime(files):
+    for file_name in files:
+        file_base, file_extension = os.path.splitext(file_name)
+        try:
+            date_time = get_exif_data(file_name)['DateTime']
+            new_file_name = date_time_fix_str(date_time) + file_extension
+            if file_name == new_file_name:
+                print "file '" + file_name + "' is not renamed because the file is already named accordingly."
+            else:
+                print "renaming '" + file_name + "' to '" + new_file_name + "'"
+                os.rename(file_name, new_file_name)
+        except:
+            print "file '" + file_name + "' was not renamed."
+    
+
+
+if __name__ == '__main__':
+    desc = "pic2date is a simple command line tool for renaming picture files according to date time that is found from the EXIF date."
+    parser = argparse.ArgumentParser(description=desc)
+    parser.add_argument('files', nargs='+')
+    args = parser.parse_args()
+    rename_files_by_datetime(args.files)
+
+    
